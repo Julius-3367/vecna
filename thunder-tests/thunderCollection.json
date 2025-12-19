@@ -1,0 +1,46 @@
+[
+  {
+    "name": "Vecna ERP API",
+    "_id": "vecna-erp-collection",
+    "colId": "vecna-erp",
+    "created": "2025-12-19T12:00:00.000Z",
+    "sortNum": 10000,
+    "folders": [
+      {
+        "_id": "auth-folder",
+        "name": "1. Authentication",
+        "containerId": "",
+        "created": "2025-12-19T12:00:00.000Z",
+        "sortNum": 10000
+      },
+      {
+        "_id": "products-folder",
+        "name": "2. Products",
+        "containerId": "",
+        "created": "2025-12-19T12:00:00.000Z",
+        "sortNum": 20000
+      },
+      {
+        "_id": "customers-folder",
+        "name": "3. Customers",
+        "containerId": "",
+        "created": "2025-12-19T12:00:00.000Z",
+        "sortNum": 30000
+      },
+      {
+        "_id": "sales-folder",
+        "name": "4. Sales",
+        "containerId": "",
+        "created": "2025-12-19T12:00:00.000Z",
+        "sortNum": 40000
+      },
+      {
+        "_id": "dashboard-folder",
+        "name": "5. Dashboard & Reports",
+        "containerId": "",
+        "created": "2025-12-19T12:00:00.000Z",
+        "sortNum": 50000
+      }
+    ]
+  }
+]

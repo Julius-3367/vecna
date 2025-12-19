@@ -1,0 +1,409 @@
+[
+  {
+    "_id": "req-health-check",
+    "colId": "vecna-erp-collection",
+    "containerId": "",
+    "name": "Health Check",
+    "url": "http://localhost:8000/up",
+    "method": "GET",
+    "sortNum": 5000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-register-tenant",
+    "colId": "vecna-erp-collection",
+    "containerId": "auth-folder",
+    "name": "Register Tenant",
+    "url": "http://localhost:8000/api/register-tenant",
+    "method": "POST",
+    "sortNum": 10000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"business_name\": \"Demo Store\",\n  \"email\": \"demo@example.com\",\n  \"phone\": \"254712345678\",\n  \"industry\": \"retail\",\n  \"subdomain\": \"demo\",\n  \"admin_name\": \"Admin User\",\n  \"admin_email\": \"admin@demo.com\",\n  \"admin_password\": \"password123\",\n  \"admin_password_confirmation\": \"password123\"\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "req-login",
+    "colId": "vecna-erp-collection",
+    "containerId": "auth-folder",
+    "name": "Login",
+    "url": "http://localhost:8000/api/v1/login",
+    "method": "POST",
+    "sortNum": 20000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"email\": \"admin@demo.com\",\n  \"password\": \"password123\"\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "req-get-me",
+    "colId": "vecna-erp-collection",
+    "containerId": "auth-folder",
+    "name": "Get Current User",
+    "url": "http://localhost:8000/api/v1/me",
+    "method": "GET",
+    "sortNum": 30000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-logout",
+    "colId": "vecna-erp-collection",
+    "containerId": "auth-folder",
+    "name": "Logout",
+    "url": "http://localhost:8000/api/v1/logout",
+    "method": "POST",
+    "sortNum": 40000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-create-product",
+    "colId": "vecna-erp-collection",
+    "containerId": "products-folder",
+    "name": "Create Product",
+    "url": "http://localhost:8000/api/v1/products",
+    "method": "POST",
+    "sortNum": 50000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"name\": \"iPhone 15 Pro\",\n  \"sku\": \"IPH-15-PRO\",\n  \"selling_price\": 150000,\n  \"cost_price\": 120000,\n  \"stock_quantity\": 25,\n  \"reorder_level\": 5,\n  \"track_stock\": true,\n  \"description\": \"Latest iPhone with titanium design\"\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "req-list-products",
+    "colId": "vecna-erp-collection",
+    "containerId": "products-folder",
+    "name": "List Products",
+    "url": "http://localhost:8000/api/v1/products",
+    "method": "GET",
+    "sortNum": 60000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [
+      {
+        "name": "per_page",
+        "value": "10",
+        "isPath": false
+      }
+    ],
+    "tests": []
+  },
+  {
+    "_id": "req-get-product",
+    "colId": "vecna-erp-collection",
+    "containerId": "products-folder",
+    "name": "Get Product Details",
+    "url": "http://localhost:8000/api/v1/products/1",
+    "method": "GET",
+    "sortNum": 70000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-update-stock",
+    "colId": "vecna-erp-collection",
+    "containerId": "products-folder",
+    "name": "Update Product Stock",
+    "url": "http://localhost:8000/api/v1/products/1/update-stock",
+    "method": "POST",
+    "sortNum": 80000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"quantity\": 10,\n  \"type\": \"in\",\n  \"reference\": \"New stock arrival\",\n  \"notes\": \"Received from supplier\"\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "req-low-stock",
+    "colId": "vecna-erp-collection",
+    "containerId": "products-folder",
+    "name": "Get Low Stock Products",
+    "url": "http://localhost:8000/api/v1/products/low-stock",
+    "method": "GET",
+    "sortNum": 90000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-create-customer",
+    "colId": "vecna-erp-collection",
+    "containerId": "customers-folder",
+    "name": "Create Customer",
+    "url": "http://localhost:8000/api/v1/customers",
+    "method": "POST",
+    "sortNum": 100000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"phone\": \"254722123456\",\n  \"customer_type\": \"individual\",\n  \"credit_limit\": 50000\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "req-list-customers",
+    "colId": "vecna-erp-collection",
+    "containerId": "customers-folder",
+    "name": "List Customers",
+    "url": "http://localhost:8000/api/v1/customers",
+    "method": "GET",
+    "sortNum": 110000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-create-sale",
+    "colId": "vecna-erp-collection",
+    "containerId": "sales-folder",
+    "name": "Create Sale",
+    "url": "http://localhost:8000/api/v1/sales",
+    "method": "POST",
+    "sortNum": 120000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "Content-Type",
+        "value": "application/json"
+      },
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "body": {
+      "type": "json",
+      "raw": "{\n  \"customer_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2,\n      \"unit_price\": 150000\n    }\n  ],\n  \"payment_method\": \"cash\"\n}",
+      "form": []
+    },
+    "tests": []
+  },
+  {
+    "_id": "req-list-sales",
+    "colId": "vecna-erp-collection",
+    "containerId": "sales-folder",
+    "name": "List Sales",
+    "url": "http://localhost:8000/api/v1/sales",
+    "method": "GET",
+    "sortNum": 130000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-dashboard",
+    "colId": "vecna-erp-collection",
+    "containerId": "dashboard-folder",
+    "name": "Dashboard Stats",
+    "url": "http://localhost:8000/api/v1/dashboard",
+    "method": "GET",
+    "sortNum": 140000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  },
+  {
+    "_id": "req-inventory-value",
+    "colId": "vecna-erp-collection",
+    "containerId": "dashboard-folder",
+    "name": "Inventory Value",
+    "url": "http://localhost:8000/api/v1/inventory/stock-value",
+    "method": "GET",
+    "sortNum": 150000,
+    "created": "2025-12-19T12:00:00.000Z",
+    "modified": "2025-12-19T12:00:00.000Z",
+    "headers": [
+      {
+        "name": "X-Tenant",
+        "value": "demo"
+      },
+      {
+        "name": "Authorization",
+        "value": "Bearer {{token}}"
+      }
+    ],
+    "params": [],
+    "tests": []
+  }
+]
