@@ -21,7 +21,6 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'phone' => 'nullable|string|max:20',
-            'role' => 'nullable|string|in:admin,manager,staff,cashier',
         ]);
 
         $user = User::create([
@@ -29,7 +28,6 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'phone' => $validated['phone'] ?? null,
-            'role' => $validated['role'] ?? 'staff',
             'is_active' => true,
         ]);
 
@@ -98,7 +96,12 @@ class AuthController extends Controller
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        // Revoke current token
+        $token = $request->user()->currentAccessToken();
+        
+        if ($token) {
+            $token->delete();
+        }
 
         return response()->json([
             'success' => true,

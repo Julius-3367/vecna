@@ -23,17 +23,19 @@ class User extends Authenticatable
         'password',
         'phone',
         'avatar',
-        'role',
         'department_id',
         'location_id',
         'employee_number',
+        'employee_id',
         'designation',
         'date_of_birth',
-        'date_of_joining',
+        'hire_date',
         'salary',
+        'employment_type',
         'is_active',
         'last_login_at',
         'last_login_ip',
+        'permissions',
     ];
 
     /**
@@ -69,23 +71,24 @@ class User extends Authenticatable
         parent::boot();
 
         static::creating(function ($user) {
-            if (empty($user->employee_number)) {
-                $user->employee_number = static::generateEmployeeNumber();
+            // Auto-generate employee_id if not set
+            if (empty($user->employee_id)) {
+                $user->employee_id = static::generateEmployeeId();
             }
         });
     }
 
     /**
-     * Generate unique employee number
+     * Generate unique employee ID
      */
-    public static function generateEmployeeNumber(): string
+    public static function generateEmployeeId(): string
     {
         $year = now()->format('Y');
         $lastUser = static::whereYear('created_at', now()->year)
             ->orderBy('id', 'desc')
             ->first();
 
-        $sequence = $lastUser ? intval(substr($lastUser->employee_number, -4)) + 1 : 1;
+        $sequence = $lastUser ? intval(substr($lastUser->employee_id, -4)) + 1 : 1;
 
         return 'EMP-'.$year.'-'.str_pad($sequence, 4, '0', STR_PAD_LEFT);
     }

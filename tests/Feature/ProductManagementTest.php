@@ -15,24 +15,30 @@ class ProductManagementTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected Tenant $tenant;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        // Create and set tenant context
+        // Create tenant and run migrations
         $this->tenant = Tenant::create([
-            'business_name' => 'Test Tenant',
-            'subdomain' => 'test',
-            'email' => 'test@tenant.com',
+            'id' => 'product-test-tenant',
+            'business_name' => 'Product Test Tenant',
+            'subdomain' => 'producttest',
+            'email' => 'product@tenant.com',
             'phone' => '254712345678',
             'status' => 'active',
         ]);
+        
+        // Run tenant migrations
+        $this->artisan('tenants:migrate', ['--tenants' => [$this->tenant->id]]);
     }
 
     public function test_user_can_create_product(): void
     {
         $this->tenant->run(function () {
-            $user = User::factory()->create(['role' => 'admin']);
+            $user = User::factory()->create();
             $category = Category::factory()->create();
             $brand = Brand::factory()->create();
             $unit = Unit::factory()->create();
@@ -84,7 +90,7 @@ class ProductManagementTest extends TestCase
     public function test_user_can_update_product_stock(): void
     {
         $this->tenant->run(function () {
-            $user = User::factory()->create(['role' => 'admin']);
+            $user = User::factory()->create();
             $product = Product::factory()->create([
                 'current_stock' => 100,
             ]);

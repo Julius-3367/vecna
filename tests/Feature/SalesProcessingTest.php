@@ -14,23 +14,30 @@ class SalesProcessingTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected Tenant $tenant;
+
     protected function setUp(): void
     {
         parent::setUp();
 
+        // Create tenant and run migrations
         $this->tenant = Tenant::create([
-            'business_name' => 'Test Tenant',
-            'subdomain' => 'test',
-            'email' => 'test@tenant.com',
+            'id' => 'sales-test-tenant',
+            'business_name' => 'Sales Test Tenant',
+            'subdomain' => 'salestest',
+            'email' => 'sales@tenant.com',
             'phone' => '254712345678',
             'status' => 'active',
         ]);
+        
+        // Run tenant migrations  
+        $this->artisan('tenants:migrate', ['--tenants' => [$this->tenant->id]]);
     }
 
     public function test_user_can_create_sale(): void
     {
         $this->tenant->run(function () {
-            $user = User::factory()->create(['role' => 'admin']);
+            $user = User::factory()->create();
             $customer = Customer::factory()->create();
             $product = Product::factory()->create([
                 'selling_price' => 100,
@@ -69,7 +76,7 @@ class SalesProcessingTest extends TestCase
     public function test_sale_calculates_total_correctly(): void
     {
         $this->tenant->run(function () {
-            $user = User::factory()->create(['role' => 'admin']);
+            $user = User::factory()->create();
             $customer = Customer::factory()->create();
             $product1 = Product::factory()->create(['selling_price' => 100, 'current_stock' => 50]);
             $product2 = Product::factory()->create(['selling_price' => 200, 'current_stock' => 30]);
@@ -94,7 +101,7 @@ class SalesProcessingTest extends TestCase
     public function test_sale_cannot_exceed_available_stock(): void
     {
         $this->tenant->run(function () {
-            $user = User::factory()->create(['role' => 'admin']);
+            $user = User::factory()->create();
             $customer = Customer::factory()->create();
             $product = Product::factory()->create([
                 'selling_price' => 100,
@@ -122,7 +129,7 @@ class SalesProcessingTest extends TestCase
     public function test_mpesa_payment_creates_pending_sale(): void
     {
         $this->tenant->run(function () {
-            $user = User::factory()->create(['role' => 'admin']);
+            $user = User::factory()->create();
             $customer = Customer::factory()->create();
             $product = Product::factory()->create([
                 'selling_price' => 100,
