@@ -45,7 +45,7 @@ class ProductController extends Controller
 
         // Filter low stock
         if ($request->boolean('low_stock')) {
-            $query->whereRaw('current_stock <= minimum_stock');
+            $query->whereRaw('stock_quantity <= reorder_level');
         }
 
         // Sort
@@ -55,6 +55,29 @@ class ProductController extends Controller
 
         $perPage = $request->get('per_page', 15);
         $products = $query->paginate($perPage);
+
+        return response()->json([
+            'success' => true,
+            'data' => $products->items(),
+            'meta' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ],
+        ]);
+    }
+
+    /**
+     * Get low stock products
+     */
+    public function lowStock(Request $request)
+    {
+        $products = Product::whereRaw('stock_quantity <= reorder_level')
+            ->where('is_active', true)
+            ->where('track_stock', true)
+            ->with(['category', 'brand', 'unit'])
+            ->get();
 
         return response()->json([
             'success' => true,
@@ -77,7 +100,8 @@ class ProductController extends Controller
             'description' => 'nullable|string',
             'cost_price' => 'required|numeric|min:0',
             'selling_price' => 'required|numeric|min:0',
-            'minimum_stock' => 'nullable|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'reorder_level' => 'nullable|integer|min:0',
             'maximum_stock' => 'nullable|integer|min:0',
             'reorder_level' => 'nullable|integer|min:0',
             'tax_rate' => 'nullable|numeric|min:0|max:100',
@@ -89,6 +113,14 @@ class ProductController extends Controller
         // Generate SKU if not provided
         if (empty($validated['sku'])) {
             $validated['sku'] = 'PRD-'.strtoupper(Str::random(8));
+        }
+        
+        // Generate slug from name
+        $validated['slug'] = Str::slug($validated['name']);
+        
+        // Set default stock_quantity if not provided
+        if (!isset($validated['stock_quantity'])) {
+            $validated['stock_quantity'] = 0;
         }
 
         // Handle image upload
@@ -176,21 +208,46 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'quantity' => 'required|integer',
-            'type' => 'required|in:in,out,adjustment',
-            'location_id' => 'required|exists:stock_locations,id',
+            'type' => 'required|in:in,out,purchase,sale,adjustment,transfer_in,transfer_out,return,damage,theft,expired,opening_balance',
             'reference' => 'nullable|string|max:255',
             'notes' => 'nullable|string',
         ]);
 
         DB::beginTransaction();
         try {
-            $product->updateStock(
-                $validated['quantity'],
-                $validated['type'],
-                $validated['location_id'],
-                $validated['reference'] ?? null,
-                $validated['notes'] ?? null
-            );
+            // Simple stock adjustment without location tracking for basic use
+            $quantityBefore = $product->stock_quantity;
+            
+            // Map simple types to proper enum values
+            $typeMap = [
+                'in' => 'purchase',
+                'out' => 'sale',
+                'adjustment' => 'adjustment',
+            ];
+            
+            $movementType = $typeMap[$validated['type']] ?? $validated['type'];
+            
+            if (in_array($validated['type'], ['purchase', 'transfer_in', 'return', 'opening_balance', 'in'])) {
+                $product->stock_quantity += $validated['quantity'];
+            } elseif (in_array($validated['type'], ['sale', 'transfer_out', 'damage', 'theft', 'expired', 'out'])) {
+                $product->stock_quantity -= $validated['quantity'];
+            } else {
+                // adjustment - add/subtract based on quantity sign
+                $product->stock_quantity += $validated['quantity'];
+            }
+            
+            $product->save();
+            
+            // Create stock movement record
+            StockMovement::create([
+                'product_id' => $product->id,
+                'quantity' => $validated['quantity'],
+                'type' => $movementType,
+                'notes' => ($validated['reference'] ?? 'Manual adjustment') . ($validated['notes'] ? "\n" . $validated['notes'] : ''),
+                'user_id' => auth()->id(),
+                'quantity_before' => $quantityBefore,
+                'quantity_after' => $product->stock_quantity,
+            ]);
 
             DB::commit();
 
@@ -199,7 +256,7 @@ class ProductController extends Controller
                 'message' => 'Stock updated successfully',
                 'data' => [
                     'product' => $product->fresh(),
-                    'current_stock' => $product->current_stock,
+                    'stock_quantity' => $product->stock_quantity,
                 ],
             ]);
         } catch (\Exception $e) {
@@ -280,7 +337,7 @@ class ProductController extends Controller
         $newProduct->sku = 'PRD-'.strtoupper(Str::random(8));
         $newProduct->barcode = null;
         $newProduct->name = $product->name.' (Copy)';
-        $newProduct->current_stock = 0;
+        $newProduct->stock_quantity = 0;
         $newProduct->save();
 
         return response()->json([

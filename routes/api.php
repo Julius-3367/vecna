@@ -59,6 +59,7 @@ Route::prefix('v1')->middleware(['auth:sanctum'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Products
+    Route::get('/products/low-stock', [ProductController::class, 'lowStock']);
     Route::apiResource('products', ProductController::class);
     Route::post('/products/{product}/stock', [ProductController::class, 'updateStock']);
     Route::get('/products/{product}/stock-history', [ProductController::class, 'stockHistory']);

@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Brand;
 use App\Models\Unit;
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 
 class ProductFactory extends Factory
 {
@@ -19,6 +20,7 @@ class ProductFactory extends Factory
 
         return [
             'name' => $this->faker->words(3, true),
+            'slug' => Str::slug($this->faker->words(3, true)),
             'sku' => 'SKU-' . strtoupper($this->faker->bothify('???-###')),
             'description' => $this->faker->sentence(),
             'category_id' => Category::factory(),
@@ -26,9 +28,9 @@ class ProductFactory extends Factory
             'unit_id' => Unit::factory(),
             'cost_price' => $costPrice,
             'selling_price' => round($sellingPrice, 2),
-            'current_stock' => $this->faker->numberBetween(0, 500),
-            'minimum_stock' => $this->faker->numberBetween(5, 20),
-            'maximum_stock' => $this->faker->numberBetween(100, 1000),
+            'stock_quantity' => $this->faker->numberBetween(0, 500),
+            'reorder_level' => $this->faker->numberBetween(5, 20),
+            'reorder_quantity' => $this->faker->numberBetween(50, 200),
             'track_stock' => true,
             'is_active' => true,
         ];

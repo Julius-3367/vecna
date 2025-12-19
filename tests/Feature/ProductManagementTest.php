@@ -44,7 +44,7 @@ class ProductManagementTest extends TestCase
             $unit = Unit::factory()->create();
 
             $response = $this->actingAs($user, 'sanctum')
-                ->postJson('/api/products', [
+                ->postJson('/api/v1/products', [
                     'name' => 'Test Product',
                     'sku' => 'TEST-001',
                     'category_id' => $category->id,
@@ -52,8 +52,8 @@ class ProductManagementTest extends TestCase
                     'unit_id' => $unit->id,
                     'cost_price' => 100,
                     'selling_price' => 150,
-                    'current_stock' => 50,
-                    'minimum_stock' => 10,
+                    'stock_quantity' => 50,
+                    'reorder_level' => 10,
                     'track_stock' => true,
                 ]);
 
@@ -76,7 +76,7 @@ class ProductManagementTest extends TestCase
             Product::factory()->count(5)->create();
 
             $response = $this->actingAs($user, 'sanctum')
-                ->getJson('/api/products');
+                ->getJson('/api/v1/products');
 
             $response->assertStatus(200)
                 ->assertJsonStructure([
@@ -92,11 +92,11 @@ class ProductManagementTest extends TestCase
         $this->tenant->run(function () {
             $user = User::factory()->create();
             $product = Product::factory()->create([
-                'current_stock' => 100,
+                'stock_quantity' => 100,
             ]);
 
             $response = $this->actingAs($user, 'sanctum')
-                ->postJson("/api/products/{$product->id}/stock", [
+                ->postJson("/api/v1/products/{$product->id}/stock", [
                     'quantity' => 50,
                     'type' => 'in',
                     'reference' => 'Stock purchase',
@@ -105,7 +105,7 @@ class ProductManagementTest extends TestCase
             $response->assertStatus(200);
 
             $product->refresh();
-            $this->assertEquals(150, $product->current_stock);
+            $this->assertEquals(150, $product->stock_quantity);
         });
     }
 
@@ -115,17 +115,17 @@ class ProductManagementTest extends TestCase
             $user = User::factory()->create();
 
             Product::factory()->create([
-                'current_stock' => 5,
-                'minimum_stock' => 10,
+                'stock_quantity' => 5,
+                'reorder_level' => 10,
             ]);
 
             Product::factory()->create([
-                'current_stock' => 50,
-                'minimum_stock' => 10,
+                'stock_quantity' => 50,
+                'reorder_level' => 10,
             ]);
 
             $response = $this->actingAs($user, 'sanctum')
-                ->getJson('/api/products/low-stock');
+                ->getJson('/api/v1/products/low-stock');
 
             $response->assertStatus(200)
                 ->assertJsonCount(1, 'data');

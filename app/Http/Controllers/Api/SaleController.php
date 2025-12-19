@@ -65,7 +65,7 @@ class SaleController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
-            'sale_date' => 'required|date',
+            'sale_date' => 'nullable|date',
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.quantity' => 'required|integer|min:1',
@@ -74,23 +74,42 @@ class SaleController extends Controller
             'items.*.tax_rate' => 'nullable|numeric|min:0',
             'discount_type' => 'nullable|in:fixed,percentage',
             'discount_value' => 'nullable|numeric|min:0',
+            'payment_method' => 'required|in:cash,mpesa,card,bank_transfer,credit',
+            'phone' => 'nullable|string',
             'notes' => 'nullable|string',
-            'location_id' => 'required|exists:stock_locations,id',
         ]);
 
         DB::beginTransaction();
         try {
+            // Validate stock availability first
+            foreach ($validated['items'] as $index => $item) {
+                $product = Product::findOrFail($item['product_id']);
+                
+                if ($product->track_stock && $product->stock_quantity < $item['quantity']) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Insufficient stock for {$product->name}",
+                        'errors' => [
+                            "items.{$index}.quantity" => ["Insufficient stock. Available: {$product->stock_quantity}"],
+                        ],
+                    ], 422);
+                }
+            }
+            
+            // Determine payment status based on payment method
+            $paymentStatus = $validated['payment_method'] === 'mpesa' ? 'pending' : 'completed';
+            $status = $validated['payment_method'] === 'cash' ? 'completed' : 'pending';
+            
             // Create sale
             $sale = Sale::create([
                 'sale_number' => Sale::generateSaleNumber(),
                 'customer_id' => $validated['customer_id'] ?? null,
-                'sale_date' => $validated['sale_date'],
-                'status' => 'completed',
-                'payment_status' => 'unpaid',
+                'sale_date' => $validated['sale_date'] ?? now(),
+                'status' => $status,
+                'payment_status' => $paymentStatus,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? 0,
                 'notes' => $validated['notes'] ?? null,
-                'location_id' => $validated['location_id'],
                 'user_id' => auth()->id(),
             ]);
 
@@ -100,14 +119,6 @@ class SaleController extends Controller
 
             foreach ($validated['items'] as $item) {
                 $product = Product::findOrFail($item['product_id']);
-
-                // Check stock availability
-                if ($product->track_stock) {
-                    $locationStock = $product->getStockAtLocation($validated['location_id']);
-                    if ($locationStock < $item['quantity']) {
-                        throw new \Exception("Insufficient stock for {$product->name}. Available: {$locationStock}");
-                    }
-                }
 
                 $itemDiscount = $item['discount'] ?? 0;
                 $itemTaxRate = $item['tax_rate'] ?? ($product->is_taxable ? $product->tax_rate : 0);
@@ -130,12 +141,21 @@ class SaleController extends Controller
 
                 // Update stock
                 if ($product->track_stock) {
-                    $product->updateStock(
-                        -$item['quantity'],
-                        'out',
-                        $validated['location_id'],
-                        "Sale: {$sale->sale_number}"
-                    );
+                    $previousStock = $product->stock_quantity;
+                    $product->stock_quantity -= $item['quantity'];
+                    $product->save();
+                    
+                    // Create stock movement record
+                    StockMovement::create([
+                        'product_id' => $product->id,
+                        'quantity' => $item['quantity'],
+                        'type' => 'sale',
+                        'reference_type' => 'sale',
+                        'reference_id' => $sale->id,
+                        'user_id' => auth()->id(),
+                        'quantity_before' => $previousStock,
+                        'quantity_after' => $product->stock_quantity,
+                    ]);
                 }
 
                 $subtotal += $lineTotal;
@@ -157,15 +177,12 @@ class SaleController extends Controller
                 'total_amount' => ($subtotal - $discountAmount) + $totalTax,
             ]);
 
-            // Record tenant usage
-            $sale->tenant->recordUsage('transactions', 1);
-
             DB::commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Sale created successfully',
-                'data' => $sale->load(['customer', 'items.product', 'payments']),
+                'data' => $sale->load(['customer', 'items.product']),
             ], 201);
 
         } catch (\Exception $e) {

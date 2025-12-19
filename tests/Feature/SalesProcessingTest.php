@@ -45,7 +45,7 @@ class SalesProcessingTest extends TestCase
             ]);
 
             $response = $this->actingAs($user, 'sanctum')
-                ->postJson('/api/sales', [
+                ->postJson('/api/v1/sales', [
                     'customer_id' => $customer->id,
                     'items' => [
                         [
@@ -69,7 +69,7 @@ class SalesProcessingTest extends TestCase
 
             // Check stock was reduced
             $product->refresh();
-            $this->assertEquals(48, $product->current_stock);
+            $this->assertEquals(48, $product->stock_quantity);
         });
     }
 
@@ -78,11 +78,11 @@ class SalesProcessingTest extends TestCase
         $this->tenant->run(function () {
             $user = User::factory()->create();
             $customer = Customer::factory()->create();
-            $product1 = Product::factory()->create(['selling_price' => 100, 'current_stock' => 50]);
-            $product2 = Product::factory()->create(['selling_price' => 200, 'current_stock' => 30]);
+            $product1 = Product::factory()->create(['selling_price' => 100, 'stock_quantity' => 50]);
+            $product2 = Product::factory()->create(['selling_price' => 200, 'stock_quantity' => 30]);
 
             $response = $this->actingAs($user, 'sanctum')
-                ->postJson('/api/sales', [
+                ->postJson('/api/v1/sales', [
                     'customer_id' => $customer->id,
                     'items' => [
                         ['product_id' => $product1->id, 'quantity' => 2, 'unit_price' => 100],
@@ -105,11 +105,11 @@ class SalesProcessingTest extends TestCase
             $customer = Customer::factory()->create();
             $product = Product::factory()->create([
                 'selling_price' => 100,
-                'current_stock' => 5,
+                'stock_quantity' => 5,
             ]);
 
             $response = $this->actingAs($user, 'sanctum')
-                ->postJson('/api/sales', [
+                ->postJson('/api/v1/sales', [
                     'customer_id' => $customer->id,
                     'items' => [
                         [
@@ -137,7 +137,7 @@ class SalesProcessingTest extends TestCase
             ]);
 
             $response = $this->actingAs($user, 'sanctum')
-                ->postJson('/api/sales', [
+                ->postJson('/api/v1/sales', [
                     'customer_id' => $customer->id,
                     'items' => [
                         ['product_id' => $product->id, 'quantity' => 2, 'unit_price' => 100],
