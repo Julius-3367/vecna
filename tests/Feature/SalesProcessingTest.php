@@ -41,7 +41,7 @@ class SalesProcessingTest extends TestCase
             $customer = Customer::factory()->create();
             $product = Product::factory()->create([
                 'selling_price' => 100,
-                'current_stock' => 50,
+                'stock_quantity' => 50,
             ]);
 
             $response = $this->actingAs($user, 'sanctum')
@@ -94,7 +94,7 @@ class SalesProcessingTest extends TestCase
             $response->assertStatus(201);
 
             $sale = Sale::first();
-            $this->assertEquals(400, $sale->total_amount); // (2 * 100) + (1 * 200)
+            $this->assertEquals(464, $sale->total_amount); // (2 * 100) + (1 * 200) + 16% tax = 464
         });
     }
 
@@ -133,7 +133,7 @@ class SalesProcessingTest extends TestCase
             $customer = Customer::factory()->create();
             $product = Product::factory()->create([
                 'selling_price' => 100,
-                'current_stock' => 50,
+                'stock_quantity' => 50,
             ]);
 
             $response = $this->actingAs($user, 'sanctum')

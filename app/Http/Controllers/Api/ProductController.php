@@ -239,11 +239,16 @@ class ProductController extends Controller
             $product->save();
             
             // Create stock movement record
+            $notes = $validated['reference'] ?? 'Manual adjustment';
+            if (isset($validated['notes']) && $validated['notes']) {
+                $notes .= "\n" . $validated['notes'];
+            }
+            
             StockMovement::create([
                 'product_id' => $product->id,
                 'quantity' => $validated['quantity'],
                 'type' => $movementType,
-                'notes' => ($validated['reference'] ?? 'Manual adjustment') . ($validated['notes'] ? "\n" . $validated['notes'] : ''),
+                'notes' => $notes,
                 'user_id' => auth()->id(),
                 'quantity_before' => $quantityBefore,
                 'quantity_after' => $product->stock_quantity,

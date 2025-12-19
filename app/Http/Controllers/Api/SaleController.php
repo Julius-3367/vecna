@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Product;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -79,7 +80,11 @@ class SaleController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        DB::beginTransaction();
+        $useTransaction = DB::transactionLevel() === 0;
+        if ($useTransaction) {
+            DB::beginTransaction();
+        }
+        
         try {
             // Validate stock availability first
             foreach ($validated['items'] as $index => $item) {
@@ -96,47 +101,94 @@ class SaleController extends Controller
                 }
             }
             
-            // Determine payment status based on payment method
-            $paymentStatus = $validated['payment_method'] === 'mpesa' ? 'pending' : 'completed';
-            $status = $validated['payment_method'] === 'cash' ? 'completed' : 'pending';
+            // Calculate totals from items first
+            $subtotal = 0;
+            $totalTax = 0;
+
+            foreach ($validated['items'] as $item) {
+                $product = Product::findOrFail($item['product_id']);
+                $lineTotal = $item['quantity'] * $item['unit_price'];
+                $subtotal += $lineTotal;
+                
+                if (isset($product->tax_rate) && $product->tax_rate > 0) {
+                    $totalTax += ($lineTotal * $product->tax_rate / 100);
+                }
+            }
+            
+            // Apply discount
+            $discountAmount = 0;
+            if (isset($validated['discount_value']) && $validated['discount_value'] > 0) {
+                if (($validated['discount_type'] ?? null) === 'percentage') {
+                    $discountAmount = $subtotal * ($validated['discount_value'] / 100);
+                } else {
+                    $discountAmount = $validated['discount_value'];
+                }
+            }
+            
+            $totalAmount = $subtotal + $totalTax - $discountAmount;
+            
+            // Determine payment status and sale status based on payment method
+            $paymentStatus = $validated['payment_method'] === 'mpesa' ? 'pending' : 'paid';
+            $status = $validated['payment_method'] === 'mpesa' ? 'processing' : 'completed';
+            
+            // Get or create default location for tenant
+            $location = DB::table('locations')->where('code', 'MAIN')->first();
+            if (!$location) {
+                $locationId = DB::table('locations')->insertGetId([
+                    'name' => 'Main Location',
+                    'code' => 'MAIN',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $locationId = $location->id;
+            }
             
             // Create sale
             $sale = Sale::create([
                 'sale_number' => Sale::generateSaleNumber(),
                 'customer_id' => $validated['customer_id'] ?? null,
+                'location_id' => $locationId,
                 'sale_date' => $validated['sale_date'] ?? now(),
                 'status' => $status,
                 'payment_status' => $paymentStatus,
+                'subtotal' => $subtotal,
+                'tax_amount' => $totalTax,
+                'discount_amount' => $discountAmount,
+                'total_amount' => $totalAmount,
+                'paid_amount' => $paymentStatus === 'paid' ? $totalAmount : 0,
                 'discount_type' => $validated['discount_type'] ?? null,
                 'discount_value' => $validated['discount_value'] ?? 0,
                 'notes' => $validated['notes'] ?? null,
+                'payment_method' => $validated['payment_method'],
                 'user_id' => auth()->id(),
             ]);
 
             // Create sale items and update stock
-            $subtotal = 0;
-            $totalTax = 0;
-
             foreach ($validated['items'] as $item) {
                 $product = Product::findOrFail($item['product_id']);
 
                 $itemDiscount = $item['discount'] ?? 0;
                 $itemTaxRate = $item['tax_rate'] ?? ($product->is_taxable ? $product->tax_rate : 0);
 
-                $lineTotal = ($item['unit_price'] * $item['quantity']) - $itemDiscount;
-                $lineTax = $lineTotal * ($itemTaxRate / 100);
-                $totalAmount = $lineTotal + $lineTax;
+                $lineTotal = ($item['unit_price'] * $item['quantity']);
+                $discountAmount = $itemDiscount;
+                $lineTax = ($lineTotal - $discountAmount) * ($itemTaxRate / 100);
+                $lineTotalWithTax = $lineTotal - $discountAmount + $lineTax;
 
                 SaleItem::create([
                     'sale_id' => $sale->id,
                     'product_id' => $item['product_id'],
+                    'product_name' => $product->name,
+                    'sku' => $product->sku ?? '',
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
-                    'cost_price' => $product->cost_price,
-                    'discount' => $itemDiscount,
+                    'unit_cost' => $product->cost_price ?? 0,
+                    'discount_amount' => $discountAmount,
                     'tax_rate' => $itemTaxRate,
                     'tax_amount' => $lineTax,
-                    'total_amount' => $totalAmount,
+                    'line_total' => $lineTotalWithTax,
                 ]);
 
                 // Update stock
@@ -157,27 +209,11 @@ class SaleController extends Controller
                         'quantity_after' => $product->stock_quantity,
                     ]);
                 }
-
-                $subtotal += $lineTotal;
-                $totalTax += $lineTax;
             }
 
-            // Apply sale-level discount
-            $discountAmount = 0;
-            if ($validated['discount_type'] === 'percentage') {
-                $discountAmount = $subtotal * ($validated['discount_value'] / 100);
-            } elseif ($validated['discount_type'] === 'fixed') {
-                $discountAmount = $validated['discount_value'];
+            if ($useTransaction) {
+                DB::commit();
             }
-
-            $sale->update([
-                'subtotal' => $subtotal,
-                'discount_amount' => $discountAmount,
-                'tax_amount' => $totalTax,
-                'total_amount' => ($subtotal - $discountAmount) + $totalTax,
-            ]);
-
-            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -186,7 +222,9 @@ class SaleController extends Controller
             ], 201);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            if ($useTransaction) {
+                DB::rollBack();
+            }
 
             return response()->json([
                 'success' => false,
