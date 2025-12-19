@@ -1,30 +1,84 @@
+# Dependencies
 /vendor/
-node_modules/
+/node_modules/
 npm-debug.log
 yarn-error.log
 
-# Laravel 4 specific
-bootstrap/compiled.php
-app/storage/
+# Laravel specific
+/storage/*.key
+/storage/logs/*.log
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+!/storage/framework/.gitkeep
+!/storage/framework/cache/.gitkeep
+!/storage/framework/sessions/.gitkeep
+!/storage/framework/views/.gitkeep
 
-# Laravel 5 & Lumen specific
-public/storage
-public/hot
-
-# Laravel 5 & Lumen specific with changed public path
-public_html/storage
-public_html/hot
-
-storage/*.key
+# Environment files
 .env
-Homestead.yaml
-Homestead.json
-/.vagrant
-.phpunit.result.cache
-
-/public/build
-/storage/pail
 .env.backup
 .env.production
 .phpactor.json
 auth.json
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+/public/build
+/public/hot
+/public/storage
+public_html/storage
+public_html/hot
+
+# Testing
+.phpunit.result.cache
+.phpunit.cache/
+/coverage/
+
+# Homestead & Vagrant
+Homestead.yaml
+Homestead.json
+/.vagrant
+
+# Database
+/database/database.sqlite
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Laravel Pail
+/storage/pail
+
+# Compiled files
+bootstrap/compiled.php
+app/storage/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# Package files
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
